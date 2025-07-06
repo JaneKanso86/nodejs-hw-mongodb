@@ -5,7 +5,9 @@ export const initMongoConnection = async () => {
     const { MONGODB_USER, MONGODB_PASSWORD, MONGODB_URL, MONGODB_DB } =
       process.env;
 
-    const connectionString = `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_URL}/${MONGODB_DB}?retryWrites=true&w=majority`;
+    const encodedPassword = encodeURIComponent(MONGODB_PASSWORD);
+
+    const connectionString = `mongodb+srv://${MONGODB_USER}:${encodedPassword}@${MONGODB_URL}/${MONGODB_DB}?retryWrites=true&w=majority`;
 
     await mongoose.connect(connectionString);
     console.log('✅ Mongo connection successfully established!');
