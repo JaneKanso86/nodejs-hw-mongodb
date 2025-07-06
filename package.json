@@ -2,19 +2,33 @@
   "name": "nodejs-hw-mongodb",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/index.js"
+    "start": "node ./src/index.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JaneKanso86/nodejs-hw-mongodb.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "JaneKanso",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/JaneKanso86/nodejs-hw-mongodb/issues"
   },
   "homepage": "https://github.com/JaneKanso86/nodejs-hw-mongodb#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.1",
+    "express": "^5.1.0",
+    "mongoose": "^8.16.1",
+    "pino": "^9.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.30.1",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2"
+  }
 }
