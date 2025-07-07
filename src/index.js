@@ -18,7 +18,6 @@ const createContact = async () => {
     isFavourite: false,
     contactType: 'personal',
   });
-  console.log('🔐 Connecting with:', connectionString);
 
   await newContact.save();
   console.log('✅ Контакт додано');
