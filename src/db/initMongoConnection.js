@@ -6,7 +6,6 @@ export const initMongoConnection = async () => {
       process.env;
 
     const encodedPassword = encodeURIComponent(MONGODB_PASSWORD);
-
     const connectionString = `mongodb+srv://${MONGODB_USER}:${encodedPassword}@${MONGODB_URL}/${MONGODB_DB}?retryWrites=true&w=majority`;
 
     await mongoose.connect(connectionString);
