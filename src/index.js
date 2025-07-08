@@ -5,7 +5,6 @@ import { initMongoConnection } from './db/initMongoConnection.js';
 const bootstrap = async () => {
   try {
     await initMongoConnection();
-    await createContact();
     setupServer();
   } catch (error) {
     console.error('❌ Помилка під час запуску:', error);
