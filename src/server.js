@@ -14,7 +14,6 @@ export const setupServer = () => {
 
   app.use('/', (req, res) => {
     res.send('API is running');
-    res.status(404).json({ message: 'Not found' });
   });
 
   const PORT = process.env.PORT || 3000;
