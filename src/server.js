@@ -3,6 +3,8 @@ import pino from 'pino';
 import cors from 'cors';
 import pinoHttp from 'pino-http';
 import contactsRouter from './routes/contacts.js';
+import { errorHandler } from './middlewares/errorHandler.js';
+import { notFoundHandler } from './middlewares/notFoundHandler.js';
 
 export const setupServer = () => {
   const app = express();
@@ -23,6 +25,9 @@ export const setupServer = () => {
   app.get('/', (req, res) => {
     return res.send('API is running');
   });
+
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
