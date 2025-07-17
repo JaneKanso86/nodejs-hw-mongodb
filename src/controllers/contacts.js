@@ -2,11 +2,31 @@ import * as contactsService from '../services/contacts.js';
 import createError from 'http-errors';
 
 export const getContacts = async (req, res) => {
-  const contacts = await contactsService.getAllContacts();
+  const {
+    page = 1,
+    perPage = 10,
+    sortBy = 'name',
+    sortOrder = 'asc',
+    type,
+    isFavourite,
+  } = req.query;
+
+  const filters = {};
+  if (type) filters.contactType = type;
+  if (isFavourite !== undefined) filters.isFavourite = isFavourite === 'true';
+
+  const result = await contactsService.getPaginatedContacts({
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+    filters,
+  });
+
   res.status(200).json({
     status: 200,
     message: 'Successfully found contacts!',
-    data: contacts,
+    data: result,
   });
 };
 
@@ -28,10 +48,6 @@ export const getContact = async (req, res) => {
 export const createContact = async (req, res) => {
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
 
-  if (!name || !phoneNumber || !contactType) {
-    throw createError(400, 'Missing required fields');
-  }
-
   const newContact = await contactsService.createContact({
     name,
     phoneNumber,
@@ -46,6 +62,7 @@ export const createContact = async (req, res) => {
     data: newContact,
   });
 };
+
 export const updateContactById = async (req, res) => {
   const { contactId } = req.params;
 
@@ -64,6 +81,7 @@ export const updateContactById = async (req, res) => {
     data: updatedContact,
   });
 };
+
 export const deleteContactById = async (req, res) => {
   const { contactId } = req.params;
 
@@ -73,5 +91,9 @@ export const deleteContactById = async (req, res) => {
     throw createError(404, 'Contact not found');
   }
 
-  res.status(204).send();
+  res.status(200).json({
+    status: 200,
+    message: 'Successfully deleted contact!',
+    data: deletedContact,
+  });
 };
