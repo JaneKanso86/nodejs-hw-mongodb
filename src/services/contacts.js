@@ -1,27 +1,30 @@
 import Contact from '../models/contact.js';
 
-export async function getAllContacts() {
-  return await Contact.find();
+export async function getAllContacts(userId) {
+  return await Contact.find({ userId });
 }
 
-export async function getContactById(contactId) {
-  return await Contact.findById(contactId);
+export async function getContactById(contactId, userId) {
+  return await Contact.findOne({ _id: contactId, userId });
 }
 
 export async function createContact(contactData) {
   return await Contact.create(contactData);
 }
 
-export async function updateContactById(contactId, data) {
-  return await Contact.findByIdAndUpdate(contactId, data, {
+export async function updateContactById(contactId, data, userId) {
+  return await Contact.findOneAndUpdate({ _id: contactId, userId }, data, {
     new: true,
     runValidators: true,
   });
 }
-export async function deleteContactById(contactId) {
-  return await Contact.findByIdAndDelete(contactId);
+
+export async function deleteContactById(contactId, userId) {
+  return await Contact.findOneAndDelete({ _id: contactId, userId });
 }
+
 export async function getPaginatedContacts({
+  userId,
   page = 1,
   perPage = 10,
   sortBy = 'name',
@@ -34,7 +37,7 @@ export async function getPaginatedContacts({
   const sortDirection = sortOrder === 'desc' ? -1 : 1;
   const sortOptions = { [sortBy]: sortDirection };
 
-  const filters = {};
+  const filters = { userId };
   if (type) filters.contactType = type;
   if (isFavourite !== undefined) filters.isFavourite = isFavourite === 'true';
 
