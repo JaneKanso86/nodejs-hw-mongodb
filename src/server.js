@@ -1,42 +1,81 @@
-import express from 'express';
-import pino from 'pino';
-import cors from 'cors';
-import pinoHttp from 'pino-http';
-import cookieParser from 'cookie-parser';
-import contactsRouter from './routes/contacts.js';
-import { errorHandler } from './middlewares/errorHandler.js';
-import { notFoundHandler } from './middlewares/notFoundHandler.js';
-import authRouter from './routes/auth.js';
+import bcrypt from 'bcrypt';
+import createError from 'http-errors';
+import * as userModel from '../models/user.js';
+import * as sessionService from './session.js';
+import { generateTokens } from './session.js';
 
-export const setupServer = () => {
-  const app = express();
+export const registerUser = async ({ name, email, password }) => {
+  const existingUser = await userModel.findUserByEmail(email);
+  if (existingUser) {
+    throw createError(409, 'Email is already in use');
+  }
 
-  app.use(express.json());
-  app.use(cors());
-  app.use(cookieParser());
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  const logger = pino({
-    transport: {
-      target: 'pino-pretty',
-    },
+  const newUser = await userModel.createUser({
+    name,
+    email,
+    password: hashedPassword,
   });
 
-  app.use(pinoHttp({ logger }));
+  return newUser;
+};
 
-  app.use('/contacts', contactsRouter);
-  app.use('/auth', authRouter);
+export const loginUser = async ({ email, password }) => {
+  const user = await userModel.findUserByEmail(email);
+  if (!user) {
+    throw createError(401, 'Invalid email or password');
+  }
 
-  app.get('/', (req, res) => {
-    return res.send('API is running');
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    throw createError(401, 'Invalid email or password');
+  }
+
+  // Delete previous session(s)
+  await sessionService.deleteSessionByUserId(user._id);
+
+  const { accessToken, refreshToken, accessTokenExp, refreshTokenExp } =
+    generateTokens(user._id);
+
+  await sessionService.saveSession({
+    userId: user._id,
+    accessToken,
+    refreshToken,
+    accessTokenValidUntil: accessTokenExp,
+    refreshTokenValidUntil: refreshTokenExp,
   });
 
-  app.use(notFoundHandler);
-  app.use(errorHandler);
+  return { accessToken, refreshToken };
+};
 
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    logger.info(`✅ Server is running on port ${PORT}`);
+export const refreshSession = async (oldRefreshToken) => {
+  const session =
+    await sessionService.findSessionByRefreshToken(oldRefreshToken);
+  if (!session) {
+    throw createError(401, 'Invalid or expired refresh token');
+  }
+
+  await sessionService.deleteSessionById(session._id);
+
+  const { accessToken, refreshToken, accessTokenExp, refreshTokenExp } =
+    generateTokens(session.userId);
+
+  await sessionService.saveSession({
+    userId: session.userId,
+    accessToken,
+    refreshToken,
+    accessTokenValidUntil: accessTokenExp,
+    refreshTokenValidUntil: refreshTokenExp,
   });
 
-  return app;
+  return { accessToken, refreshToken };
+};
+
+export const getSessionByRefreshToken = async (refreshToken) => {
+  return await sessionService.findSessionByRefreshToken(refreshToken);
+};
+
+export const removeSession = async (sessionId) => {
+  await sessionService.deleteSessionById(sessionId);
 };

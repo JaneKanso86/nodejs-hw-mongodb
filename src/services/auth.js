@@ -5,6 +5,24 @@ import { Session } from '../models/session.js';
 import bcrypt from 'bcryptjs';
 
 const { JWT_ACCESS_SECRET, JWT_REFRESH_SECRET } = process.env;
+export const registerUser = async ({ email, password }) => {
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    throw createError(409, 'Email already in use');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const newUser = await User.create({
+    email,
+    password: hashedPassword,
+  });
+
+  return {
+    id: newUser._id,
+    email: newUser.email,
+  };
+};
 
 export const loginUser = async ({ email, password }) => {
   const user = await User.findOne({ email });
