@@ -3,6 +3,7 @@ import createError from 'http-errors';
 import * as userModel from './models/user.js';
 import * as sessionService from './models/session.js';
 import { generateTokens } from './utils/generateTokens.js';
+import authRouter from './routes/auth.js';
 
 export const registerUser = async ({ name, email, password }) => {
   const existingUser = await userModel.findUserByEmail(email);
@@ -85,6 +86,7 @@ export function setupServer() {
   const app = express();
 
   app.use(express.json());
+  app.use('/auth', authRouter);
 
   app.get('/', (req, res) => {
     res.send('API is running');
