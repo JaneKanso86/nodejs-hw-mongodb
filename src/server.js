@@ -90,5 +90,8 @@ export function setupServer() {
     res.send('API is running');
   });
 
-  return app;
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`✅ Server is running on port ${PORT}`);
+  });
 }
