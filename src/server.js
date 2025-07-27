@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
 import createError from 'http-errors';
-import * as userModel from '../models/user.js';
-import * as sessionService from './session.js';
-import { generateTokens } from './session.js';
+import * as userModel from './models/user.js';
+import * as sessionService from './models/session.js';
+import { generateTokens } from './utils/generateTokens.js';
 
 export const registerUser = async ({ name, email, password }) => {
   const existingUser = await userModel.findUserByEmail(email);
@@ -79,3 +79,16 @@ export const getSessionByRefreshToken = async (refreshToken) => {
 export const removeSession = async (sessionId) => {
   await sessionService.deleteSessionById(sessionId);
 };
+import express from 'express';
+
+export function setupServer() {
+  const app = express();
+
+  app.use(express.json());
+
+  app.get('/', (req, res) => {
+    res.send('API is running');
+  });
+
+  return app;
+}

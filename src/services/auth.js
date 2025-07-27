@@ -1,105 +1,81 @@
-import createError from 'http-errors';
-import jwt from 'jsonwebtoken';
-import { User } from '../models/user.js';
-import { Session } from '../models/session.js';
+// src/services/auth.service.js
 import bcrypt from 'bcryptjs';
+import createError from 'http-errors';
+import * as userModel from '../models/user.js';
+import * as sessionService from '../models/session.js';
+import { generateTokens } from '../utils/generateTokens.js';
 
-const { JWT_ACCESS_SECRET, JWT_REFRESH_SECRET } = process.env;
-export const registerUser = async ({ email, password }) => {
-  const existingUser = await User.findOne({ email });
+export const registerUser = async ({ name, email, password }) => {
+  const existingUser = await userModel.findUserByEmail(email);
   if (existingUser) {
-    throw createError(409, 'Email already in use');
+    throw createError(409, 'Email is already in use');
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await User.create({
+  const newUser = await userModel.createUser({
+    name,
     email,
     password: hashedPassword,
   });
 
-  return {
-    id: newUser._id,
-    email: newUser.email,
-  };
+  return newUser;
 };
 
 export const loginUser = async ({ email, password }) => {
-  const user = await User.findOne({ email });
-
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    throw createError(401, 'Email or password is wrong');
+  const user = await userModel.findUserByEmail(email);
+  if (!user) {
+    throw createError(401, 'Invalid email or password');
   }
 
-  await Session.findOneAndDelete({ userId: user._id });
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    throw createError(401, 'Invalid email or password');
+  }
 
-  const accessToken = jwt.sign({ userId: user._id }, JWT_ACCESS_SECRET, {
-    expiresIn: '15m',
-  });
+  await sessionService.deleteSessionByUserId(user._id);
 
-  const refreshToken = jwt.sign({ userId: user._id }, JWT_REFRESH_SECRET, {
-    expiresIn: '30d',
-  });
+  const { accessToken, refreshToken, accessTokenExp, refreshTokenExp } =
+    generateTokens(user._id);
 
-  const accessTokenValidUntil = new Date(Date.now() + 15 * 60 * 1000);
-  const refreshTokenValidUntil = new Date(
-    Date.now() + 30 * 24 * 60 * 60 * 1000,
-  );
-
-  await Session.create({
+  await sessionService.saveSession({
     userId: user._id,
     accessToken,
     refreshToken,
-    accessTokenValidUntil,
-    refreshTokenValidUntil,
+    accessTokenValidUntil: accessTokenExp,
+    refreshTokenValidUntil: refreshTokenExp,
   });
 
   return { accessToken, refreshToken };
 };
+
 export const refreshSession = async (oldRefreshToken) => {
-  let payload;
-  try {
-    payload = jwt.verify(oldRefreshToken, JWT_REFRESH_SECRET);
-  } catch {
+  const session =
+    await sessionService.findSessionByRefreshToken(oldRefreshToken);
+  if (!session) {
     throw createError(401, 'Invalid or expired refresh token');
   }
 
-  const existingSession = await Session.findOne({ userId: payload.userId });
+  await sessionService.deleteSessionById(session._id);
 
-  if (!existingSession || existingSession.refreshToken !== oldRefreshToken) {
-    throw createError(403, 'Refresh token is not valid or session expired');
-  }
+  const { accessToken, refreshToken, accessTokenExp, refreshTokenExp } =
+    generateTokens(session.userId);
 
-  await Session.findOneAndDelete({ userId: payload.userId });
-
-  const newAccessToken = jwt.sign(
-    { userId: payload.userId },
-    JWT_ACCESS_SECRET,
-    {
-      expiresIn: '15m',
-    },
-  );
-
-  const newRefreshToken = jwt.sign(
-    { userId: payload.userId },
-    JWT_REFRESH_SECRET,
-    {
-      expiresIn: '30d',
-    },
-  );
-
-  const refreshTokenValidUntil = new Date(
-    Date.now() + 30 * 24 * 60 * 60 * 1000,
-  );
-
-  await Session.create({
-    userId: payload.userId,
-    refreshToken: newRefreshToken,
-    refreshTokenValidUntil,
+  await sessionService.saveSession({
+    userId: session.userId,
+    accessToken,
+    refreshToken,
+    accessTokenValidUntil: accessTokenExp,
+    refreshTokenValidUntil: refreshTokenExp,
   });
 
-  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  return { accessToken, refreshToken };
 };
+
+export const getSessionByRefreshToken = async (refreshToken) => {
+  return await sessionService.findSessionByRefreshToken(refreshToken);
+};
+
 export const removeSession = async (sessionId) => {
-  await Session.findByIdAndDelete(sessionId);
+  await sessionService.deleteSessionById(sessionId);
 };
