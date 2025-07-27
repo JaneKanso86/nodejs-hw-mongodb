@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import createError from 'http-errors';
 import * as userModel from '../models/user.js';
 import * as sessionService from './session.js';
