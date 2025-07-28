@@ -7,7 +7,7 @@ export function setupServer() {
 
   app.use(express.json());
   app.use(cookieParser());
-  app.use('/api/auth', authRouter);
+  app.use('/auth', authRouter);
 
   app.get('/', (req, res) => {
     res.send('API is running');
