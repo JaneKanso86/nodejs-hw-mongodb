@@ -1,9 +1,9 @@
 import * as authService from '../services/auth.js';
 import createError from 'http-errors';
-import { registerSchema, loginSchema } from '../middlewares/auth.js';
+import { registerSchema, loginSchema } from '../validation/authSchemas.js';
 
 // Register
-export const registerUser = async (req, res, next) => {
+export const register = async (req, res, next) => {
   try {
     const { error, value } = registerSchema.validate(req.body);
     if (error) {
@@ -30,7 +30,7 @@ export const registerUser = async (req, res, next) => {
 };
 
 // Login
-export const loginUser = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { error, value } = loginSchema.validate(req.body);
     if (error) {
@@ -62,7 +62,7 @@ export const loginUser = async (req, res, next) => {
 };
 
 // Refresh Session
-export const refreshSession = async (req, res, next) => {
+export const refresh = async (req, res, next) => {
   try {
     const oldRefreshToken = req.cookies?.refreshToken;
     if (!oldRefreshToken) {
