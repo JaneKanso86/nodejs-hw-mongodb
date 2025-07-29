@@ -1,42 +1,40 @@
-import jwt from 'jsonwebtoken';
-import createError from 'http-errors';
-import { Session } from '../models/session.js';
+import createHttpError from 'http-errors';
 import { User } from '../models/user.js';
+import { Session } from '../models/session.js';
 
-const { JWT_ACCESS_SECRET } = process.env;
-
-export const authenticate = async (req, res, next) => {
+export async function authenticate(req, res, next) {
   try {
-    const authHeader = req.headers.authorization || '';
-    const [bearer, token] = authHeader.split(' ');
+    const { authorization } = req.headers;
 
-    if (bearer !== 'Bearer' || !token) {
-      throw createError(401, 'Not authorized');
+    if (typeof authorization !== 'string') {
+      throw new createHttpError.Unauthorized('Please provide access token');
     }
 
-    let payload;
-    try {
-      payload = jwt.verify(token, JWT_ACCESS_SECRET);
-    } catch (err) {
-      if (err.name === 'TokenExpiredError') {
-        throw createError(401, 'Access token expired');
-      }
-      throw createError(401, 'Invalid token');
+    const [bearer, accessToken] = authorization.split(' ');
+
+    if (bearer !== 'Bearer' || typeof accessToken !== 'string') {
+      throw new createHttpError.Unauthorized('Please provide access token');
     }
 
-    const session = await Session.findOne({ accessToken: token });
+    const session = await Session.findOne({ accessToken });
+
     if (!session) {
-      throw createError(401, 'Session not found');
+      throw new createHttpError.Unauthorized('Session not found');
     }
 
-    const user = await User.findById(payload.userId);
+    if (session.accessTokenValidUntil < new Date()) {
+      throw new createHttpError.Unauthorized('Access token is expired');
+    }
+
+    const user = await User.findById(session.userId);
+
     if (!user) {
-      throw createError(401, 'User not found');
+      throw new createHttpError.Unauthorized('User not found');
     }
 
-    req.user = { ...user.toObject(), sessionId: session._id };
+    req.user = { id: user._id, name: user.name };
     next();
   } catch (error) {
     next(error);
   }
-};
+}

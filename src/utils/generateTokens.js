@@ -1,18 +1,10 @@
-import jwt from 'jsonwebtoken';
+import crypto from 'node:crypto';
 
-export function generateTokens(userId) {
-  const payload = { userId };
-
-  const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, {
-    expiresIn: '15m',
-  });
-
-  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: '7d',
-  });
-
-  const accessTokenExp = Date.now() + 15 * 60 * 1000; // 15 хв
-  const refreshTokenExp = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 днів
+export const generateTokens = (userId) => {
+  const accessToken = crypto.randomBytes(30).toString('base64');
+  const refreshToken = crypto.randomBytes(30).toString('base64');
+  const accessTokenExp = new Date(Date.now() + 10 * 60 * 1000); // 10 хв
+  const refreshTokenExp = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 год
 
   return { accessToken, refreshToken, accessTokenExp, refreshTokenExp };
-}
+};

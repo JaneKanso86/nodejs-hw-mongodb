@@ -13,8 +13,9 @@ export function setupServer() {
 
   app.use(cors());
   app.use(pino());
-  app.use(express.json());
   app.use(cookieParser());
+  app.use(express.json());
+
   app.use('/auth', authRouter);
 
   app.get('/', (req, res) => {

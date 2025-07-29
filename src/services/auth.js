@@ -1,9 +1,8 @@
-// src/services/auth.service.js
 import bcrypt from 'bcryptjs';
 import createError from 'http-errors';
 import * as userModel from '../models/user.js';
 import * as sessionService from '../models/session.js';
-import { generateTokens } from '../utils/generateTokens.js';
+import { generateTokens } from '../utils/generateTokens.js'; // використовуємо лише цю
 
 export const registerUser = async ({ name, email, password }) => {
   const existingUser = await userModel.findUserByEmail(email);
