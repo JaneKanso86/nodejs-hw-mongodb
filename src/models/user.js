@@ -1,10 +1,20 @@
-import mongoose from 'mongoose';
+import { model, Schema } from 'mongoose';
 
-const userSchema = new mongoose.Schema(
+const userShema = new Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    name: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -12,22 +22,10 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-userSchema.methods.toJSON = function () {
+userShema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
   return obj;
 };
 
-export const User = mongoose.model('User', userSchema);
-
-export const findUserByEmail = async (email) => {
-  return await User.findOne({ email });
-};
-
-export const createUser = async (userData) => {
-  return await User.create(userData);
-};
-
-export const findUserById = async (id) => {
-  return await User.findById(id);
-};
+export const User = model('user', userShema);

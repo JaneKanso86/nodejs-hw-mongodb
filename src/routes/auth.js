@@ -1,19 +1,31 @@
 import express from 'express';
-import { register, login, logout, refresh } from '../controllers/auth.js';
 
 import { validateBody } from '../middlewares/validateBody.js';
-import { loginSchema, registerSchema } from '../validation/authSchemas.js';
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
-import { authenticate } from '../middlewares/authenticate.js';
+import { loginUser, registerUser } from '../validation/authSchemas.js';
+import {
+  loginUserController,
+  logoutUserController,
+  refreshUserController,
+  registerUserController,
+} from '../controllers/auth.js';
 
 const router = express.Router();
 
-router.post('/register', validateBody(registerSchema), ctrlWrapper(register));
+router.post(
+  '/register',
+  validateBody(registerUser),
+  ctrlWrapper(registerUserController),
+);
 
-router.post('/login', validateBody(loginSchema), ctrlWrapper(login));
+router.post(
+  '/login',
+  validateBody(loginUser),
+  ctrlWrapper(loginUserController),
+);
 
-router.post('/refresh', ctrlWrapper(refresh));
+router.post('/logout', ctrlWrapper(logoutUserController));
 
-router.post('/logout', authenticate, ctrlWrapper(logout));
+router.post('/refresh', ctrlWrapper(refreshUserController));
 
 export default router;

@@ -1,63 +1,77 @@
-import Contact from '../models/contact.js';
+import { ContactsCollection } from '../models/contact.js';
 
-export async function getAllContacts(userId) {
-  return await Contact.find({ userId });
-}
-
-export async function getContactById(contactId, userId) {
-  return await Contact.findOne({ _id: contactId, userId });
-}
-
-export async function createContact(contactData) {
-  return await Contact.create(contactData);
-}
-
-export async function updateContactById(contactId, data, userId) {
-  return await Contact.findOneAndUpdate({ _id: contactId, userId }, data, {
-    new: true,
-    runValidators: true,
-  });
-}
-
-export async function deleteContactById(contactId, userId) {
-  return await Contact.findOneAndDelete({ _id: contactId, userId });
-}
-
-export async function getPaginatedContacts({
+export const getAllContacts = async (
+  page,
+  perPage,
+  sortBy,
+  sortOrder,
+  filter = {},
   userId,
-  page = 1,
-  perPage = 10,
-  sortBy = 'name',
-  sortOrder = 'asc',
-  type,
-  isFavourite,
-}) {
-  const limit = parseInt(perPage, 10);
-  const skip = (parseInt(page, 10) - 1) * limit;
-  const sortDirection = sortOrder === 'desc' ? -1 : 1;
-  const sortOptions = { [sortBy]: sortDirection };
+) => {
+  const skip = page > 0 ? (page - 1) * perPage : 0;
 
-  const filters = { userId };
-  if (type) filters.contactType = type;
-  if (isFavourite !== undefined) filters.isFavourite = isFavourite === 'true';
+  const contactsQuery = ContactsCollection.find({ userId });
 
-  const totalItems = await Contact.countDocuments(filters);
-  const contacts = await Contact.find(filters)
-    .sort(sortOptions)
-    .skip(skip)
-    .limit(limit);
+  if (typeof filter.type !== 'undefined') {
+    contactsQuery.where('contactType').equals(filter.type);
+  }
 
-  const totalPages = Math.ceil(totalItems / limit);
-  const hasPreviousPage = page > 1;
-  const hasNextPage = page < totalPages;
+  if (typeof filter.isFavourite !== 'undefined') {
+    contactsQuery.where('isFavourite').equals(filter.isFavourite);
+  }
+
+  const [count, contacts] = await Promise.all([
+    ContactsCollection.find().countDocuments(contactsQuery),
+    contactsQuery
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(perPage),
+  ]);
+
+  const totalPages = Math.ceil(count / perPage);
 
   return {
     data: contacts,
-    page: parseInt(page, 10),
-    perPage: limit,
-    totalItems,
-    totalPages,
-    hasPreviousPage,
-    hasNextPage,
+    page,
+    perPage,
+    totalItems: count,
+    totalPages: totalPages,
+    hasNextPage: totalPages > page,
+    hasPreviousPage: page > 1,
   };
-}
+};
+
+export const getContactById = async (contactId, userId) => {
+  return ContactsCollection.findOne({ _id: contactId, userId });
+};
+
+export const createContact = async (payload, userId) => {
+  return ContactsCollection.create(payload, userId);
+};
+
+export const updateContact = async (contactId, payload) => {
+  return ContactsCollection.findOneAndUpdate({ _id: contactId }, payload, {
+    new: true,
+  });
+};
+
+export const deleteContact = async (contactId) => {
+  return ContactsCollection.findOneAndDelete({ _id: contactId });
+};
+
+export const replaceContact = async (contactId, payload) => {
+  const result = await ContactsCollection.findByIdAndUpdate(
+    contactId,
+    payload,
+    {
+      new: true,
+      upsert: true,
+      includeResultMetadata: true,
+    },
+  );
+
+  return {
+    value: result.value,
+    updateExisting: result.lastErrorObject.updatedExisting,
+  };
+};

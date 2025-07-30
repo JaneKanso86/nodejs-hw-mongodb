@@ -1,9 +1,11 @@
 import mongoose from 'mongoose';
+import { model, Schema } from 'mongoose';
 
-const sessionSchema = new mongoose.Schema(
+const sessionShema = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: 'users',
       required: true,
     },
     accessToken: {
@@ -29,20 +31,4 @@ const sessionSchema = new mongoose.Schema(
   },
 );
 
-export const Session = mongoose.model('Session', sessionSchema);
-
-export const saveSession = async (sessionData) => {
-  return await Session.create(sessionData);
-};
-
-export const findSessionByRefreshToken = async (refreshToken) => {
-  return await Session.findOne({ refreshToken });
-};
-
-export const deleteSessionByUserId = async (userId) => {
-  return await Session.deleteMany({ userId });
-};
-
-export const deleteSessionById = async (sessionId) => {
-  return await Session.findByIdAndDelete(sessionId);
-};
+export const Session = model('session', sessionShema);

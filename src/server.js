@@ -1,31 +1,44 @@
 import express from 'express';
+import pino from 'pino';
+import pinoHttp from 'pino-http';
 import cors from 'cors';
-import pino from 'pino-http';
-import authRouter from './routes/auth.js';
-import cookieParser from 'cookie-parser';
-
+import { getEnvVar } from './utils/getEnvVar.js';
 import contactsRouter from './routes/contacts.js';
-import { notFoundHandler } from './middlewares/notFoundHandler.js';
+import authRouter from './routes/auth.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { notFoundHandler } from './middlewares/notFoundHandler.js';
+import cookieParser from 'cookie-parser';
+import { auth } from './middlewares/authenticate.js';
 
-export function setupServer() {
+const PORT = getEnvVar('PORT') || 5543;
+
+export const setupServer = () => {
   const app = express();
 
-  app.use(cors());
-  app.use(pino());
-  app.use(cookieParser());
   app.use(express.json());
+  app.use(cors());
+  app.use(cookieParser());
 
-  app.use('/auth', authRouter);
-
-  app.get('/', (req, res) => {
-    res.send('API is running');
+  const logger = pino({
+    transport: {
+      target: 'pino-pretty',
+    },
   });
 
-  app.use('/contacts', contactsRouter);
+  app.use(pinoHttp({ logger }));
+
+  app.use('/auth', authRouter);
+  app.use('/contacts', auth, contactsRouter);
 
   app.use(notFoundHandler);
+
   app.use(errorHandler);
 
-  return app;
-}
+  app.listen(PORT, (error) => {
+    if (error) {
+      throw error;
+    }
+
+    logger.info(`Server started on port ${PORT}`);
+  });
+};

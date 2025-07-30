@@ -1,95 +1,103 @@
-import * as contactsService from '../services/contacts.js';
-import createError from 'http-errors';
+import createHttpError from 'http-errors';
+import {
+  createContact,
+  deleteContact,
+  getAllContacts,
+  getContactById,
+  replaceContact,
+  updateContact,
+} from '../services/contacts.js';
+import { parsePaginationParams } from '../utils/parsePaginationParams.js';
+import { parseSortParams } from '../utils/parseSortParams.js';
+import { parseFilterParams } from '../utils/parseFilterParams.js';
 
-export const getContacts = async (req, res) => {
-  const {
-    page = 1,
-    perPage = 10,
-    sortBy = 'name',
-    sortOrder = 'asc',
-    type,
-    isFavourite,
-  } = req.query;
+export const getContactsController = async (req, res) => {
+  const { page, perPage } = parsePaginationParams(req.query);
+  const { sortBy, sortOrder } = parseSortParams(req.query);
+  const filter = parseFilterParams(req.query);
 
-  const filters = {};
-  if (type) filters.contactType = type;
-  if (isFavourite !== undefined) filters.isFavourite = isFavourite === 'true';
-
-  const result = await contactsService.getPaginatedContacts({
+  const contacts = await getAllContacts(
     page,
     perPage,
     sortBy,
     sortOrder,
-    filters,
-  });
+    filter,
+    req.user.id,
+  );
 
   res.status(200).json({
     status: 200,
     message: 'Successfully found contacts!',
-    data: result,
+    data: contacts,
   });
 };
 
-export const getContact = async (req, res) => {
-  const { contactId } = req.params;
-  const contact = await contactsService.getContactById(contactId);
+export const getContactByIdController = async (req, res, next) => {
+  const contact = await getContactById(req.params.id, req.user.id);
 
   if (!contact) {
-    throw createError(404, 'Contact not found');
+    throw createHttpError(404, 'Contact not found');
   }
 
   res.status(200).json({
     status: 200,
-    message: `Successfully found contact with id ${contactId}!`,
+    message: `Successfully found contact!`,
     data: contact,
   });
 };
 
-export const createContact = async (req, res) => {
-  const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-
-  const newContact = await contactsService.createContact({
-    name,
-    phoneNumber,
-    email,
-    isFavourite,
-    contactType,
-  });
+export const createContactController = async (req, res) => {
+  console.log('req.user:', req.user);
+  const contact = await createContact({ ...req.body, userId: req.user._id });
 
   res.status(201).json({
     status: 201,
     message: 'Successfully created a contact!',
-    data: newContact,
+    data: contact,
   });
 };
 
-export const updateContactById = async (req, res) => {
-  const { contactId } = req.params;
+export const updateContactController = async (req, res) => {
+  const result = await updateContact(req.params.id, req.body);
 
-  const updatedContact = await contactsService.updateContactById(
-    contactId,
-    req.body,
-  );
-
-  if (!updatedContact) {
-    throw createError(404, 'Contact not found');
+  if (result === null) {
+    throw createHttpError(404, 'Contact not found');
   }
 
   res.status(200).json({
     status: 200,
     message: 'Successfully patched a contact!',
-    data: updatedContact,
+    data: result,
   });
 };
 
-export const deleteContactById = async (req, res) => {
-  const { contactId } = req.params;
+export const deleteContactController = async (req, res) => {
+  const result = await deleteContact(req.params.id);
 
-  const deletedContact = await contactsService.deleteContactById(contactId);
-
-  if (!deletedContact) {
-    throw createError(404, 'Contact not found');
+  if (result === null) {
+    throw createHttpError(404, 'Contact not found');
   }
 
-  res.status(204).send();
+  res.status(204).end();
+};
+
+export const replaceContactController = async (req, res) => {
+  const { value, updateExisting } = await replaceContact(
+    req.params.id,
+    req.body,
+  );
+
+  if (updateExisting === true) {
+    return res.status(200).json({
+      status: 200,
+      message: 'Contact updated successfully',
+      data: value,
+    });
+  }
+
+  res.status(201).json({
+    status: 201,
+    message: 'Successfully created a contact!',
+    data: value,
+  });
 };

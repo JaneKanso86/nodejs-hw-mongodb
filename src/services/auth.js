@@ -1,80 +1,80 @@
-import bcrypt from 'bcryptjs';
-import createError from 'http-errors';
-import * as userModel from '../models/user.js';
-import * as sessionService from '../models/session.js';
-import { generateTokens } from '../utils/generateTokens.js'; // використовуємо лише цю
+import bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
+import { User } from '../models/user.js';
+import { Session } from '../models/session.js';
+import createHttpError from 'http-errors';
 
-export const registerUser = async ({ name, email, password }) => {
-  const existingUser = await userModel.findUserByEmail(email);
-  if (existingUser) {
-    throw createError(409, 'Email is already in use');
+export const registerUser = async (payload) => {
+  const user = await User.findOne({ email: payload.email });
+
+  if (user) {
+    throw createHttpError(409, 'Email in use');
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const encryptedPassword = await bcrypt.hash(payload.password, 10);
 
-  const newUser = await userModel.createUser({
-    name,
-    email,
-    password: hashedPassword,
+  return await User.create({
+    ...payload,
+    password: encryptedPassword,
   });
-
-  return newUser;
 };
 
-export const loginUser = async ({ email, password }) => {
-  const user = await userModel.findUserByEmail(email);
+export const loginUser = async (payload) => {
+  const user = await User.findOne({ email: payload.email });
+
   if (!user) {
-    throw createError(401, 'Invalid email or password');
+    throw createHttpError(401, 'User not found');
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    throw createError(401, 'Invalid email or password');
+  const isEqual = await bcrypt.compare(payload.password, user.password);
+
+  if (!isEqual) {
+    throw createHttpError(401, 'Unauthorized');
   }
 
-  await sessionService.deleteSessionByUserId(user._id);
+  await Session.deleteOne({ userId: user._id });
 
-  const { accessToken, refreshToken, accessTokenExp, refreshTokenExp } =
-    generateTokens(user._id);
+  const accessToken = randomBytes(30).toString('base64');
+  const refreshToken = randomBytes(30).toString('base64');
 
-  await sessionService.saveSession({
+  return await Session.create({
     userId: user._id,
     accessToken,
     refreshToken,
-    accessTokenValidUntil: accessTokenExp,
-    refreshTokenValidUntil: refreshTokenExp,
+    accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), //15 minutes
+    refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), //30 days
   });
-
-  return { accessToken, refreshToken };
 };
 
-export const refreshSession = async (oldRefreshToken) => {
-  const session =
-    await sessionService.findSessionByRefreshToken(oldRefreshToken);
+export const logoutUser = async (sessionId) => {
+  await Session.deleteOne({ _id: sessionId });
+};
+
+export const refreshSession = async ({ sessionId, refreshToken }) => {
+  const session = await Session.findOne({
+    _id: sessionId,
+    refreshToken,
+  });
+
   if (!session) {
-    throw createError(401, 'Invalid or expired refresh token');
+    throw new createHttpError.Unauthorized('Session not found');
   }
 
-  await sessionService.deleteSessionById(session._id);
+  if (session.refreshToken !== refreshToken) {
+    throw new createHttpError.Unauthorized('Refresh token is invalid');
+  }
 
-  const { accessToken, refreshToken, accessTokenExp, refreshTokenExp } =
-    generateTokens(session.userId);
+  if (session.refreshTokenValidUntil < new Date()) {
+    throw new createHttpError.Unauthorized('Refresh token is expired');
+  }
 
-  await sessionService.saveSession({
+  await Session.deleteOne({ _id: session._id });
+
+  return Session.create({
     userId: session.userId,
-    accessToken,
-    refreshToken,
-    accessTokenValidUntil: accessTokenExp,
-    refreshTokenValidUntil: refreshTokenExp,
+    accessToken: randomBytes(30).toString('base64'),
+    refreshToken: randomBytes(30).toString('base64'),
+    accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), //15 minutes
+    refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), //30 days
   });
-
-  return { accessToken, refreshToken };
-};
-
-export const getSessionByRefreshToken = async (refreshToken) => {
-  return await sessionService.findSessionByRefreshToken(refreshToken);
-};
-
-export const removeSession = async (sessionId) => {
-  await sessionService.deleteSessionById(sessionId);
 };
