@@ -7,7 +7,7 @@ export const validateBody = (shema) => async (req, res, next) => {
     });
     next();
   } catch (err) {
-    const error = createHttpError(404, 'Bad request', {
+    const error = createHttpError(400, 'Bad request', {
       errors: err.details,
     });
     next(error);

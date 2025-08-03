@@ -1,4 +1,7 @@
+import fs from 'fs/promises';
 import createHttpError from 'http-errors';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
+
 import {
   createContact,
   deleteContact,
@@ -63,16 +66,38 @@ export const createContactController = async (req, res, next) => {
 
 export const updateContactController = async (req, res, next) => {
   try {
-    const result = await updateContact(req.params.id, req.body, req.user.id);
+    const contactId = req.params.id;
+    const userId = req.user.id;
 
-    if (result === null) {
+    let photoUrl;
+
+    if (req.file) {
+      const result = await uploadToCloudinary.uploader.upload(req.file.path, {
+        folder: 'contacts_photos',
+      });
+
+      photoUrl = result.secure_url;
+
+      await fs.unlink(req.file.path); // очищаємо тимчасову папку
+    }
+
+    const updatedContact = await updateContact(
+      contactId,
+      {
+        ...req.body,
+        ...(photoUrl && { photo: photoUrl }),
+      },
+      userId,
+    );
+
+    if (!updatedContact) {
       throw createHttpError(404, 'Contact not found');
     }
 
     res.status(200).json({
       status: 200,
       message: 'Successfully patched a contact!',
-      data: result,
+      data: updatedContact,
     });
   } catch (error) {
     next(error);

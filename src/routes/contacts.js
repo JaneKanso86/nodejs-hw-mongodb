@@ -14,6 +14,8 @@ import {
   updateContactShema,
 } from '../validation/contactsSchemas.js';
 import { isValidId } from '../middlewares/isValidId.js';
+import { upload } from '../middlewares/upload.js';
+import { auth } from '../middlewares/authenticate.js';
 
 const router = express.Router();
 
@@ -29,7 +31,9 @@ router.post(
 
 router.patch(
   '/:id',
+  auth,
   isValidId,
+  upload.single('photo'),
   validateBody(updateContactShema),
   ctrlWrapper(updateContactController),
 );

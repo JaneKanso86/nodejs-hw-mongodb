@@ -35,4 +35,5 @@ router.post('/logout', ctrlWrapper(logoutUserController));
 router.post('/refresh', ctrlWrapper(refreshUserController));
 
 router.post('/send-reset-email', validateBody(emailSchema), sendResetEmail);
+
 export default router;
