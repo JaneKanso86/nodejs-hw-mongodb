@@ -1,21 +1,27 @@
 import { v2 as cloudinary } from 'cloudinary';
-import { getEnvVar } from './getEnvVar.js';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 cloudinary.config({
-  cloud_name: getEnvVar('CLOUDINARY_CLOUD_NAME'),
-  api_key: getEnvVar('CLOUDINARY_API_KEY'),
-  api_secret: getEnvVar('CLOUDINARY_API_SECRET'),
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: 'contacts',
-    allowed_formats: ['jpg', 'jpeg', 'png'],
+    folder: 'photo',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
     transformation: [{ width: 500, height: 500, crop: 'limit' }],
   },
 });
 
-export const uploadToCloudinary = multer({ storage });
+export const upload = multer({ storage });
+
+export const uploadToCloudinary = async (filePath, folderName = 'photo') => {
+  const result = await cloudinary.uploader.upload(filePath, {
+    folder: folderName,
+  });
+  return result.secure_url;
+};

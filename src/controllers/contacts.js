@@ -1,5 +1,4 @@
 import createHttpError from 'http-errors';
-import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 import {
   createContact,
@@ -54,16 +53,13 @@ export const createContactController = async (req, res, next) => {
     let photoUrl = '';
 
     if (req.file) {
-      photoUrl = await uploadToCloudinary(
-        req.file.buffer,
-        req.file.originalname,
-      );
+      photoUrl = req.file.path;
     }
 
     const contact = await createContact({
       ...req.body,
       userId: req.user.id,
-      ...(photoUrl && { photo: photoUrl }), // якщо є
+      ...(photoUrl && { photo: photoUrl }),
     });
 
     res.status(201).json({
@@ -84,10 +80,7 @@ export const updateContactController = async (req, res, next) => {
     let updatedData = { ...req.body };
 
     if (req.file) {
-      const photoUrl = await uploadToCloudinary(
-        req.file.buffer,
-        req.file.originalname,
-      );
+      const photoUrl = req.file.path;
       updatedData.photo = photoUrl;
     }
 
@@ -150,10 +143,7 @@ export const updateContactPhoto = async (req, res) => {
     throw createHttpError(400, 'No file uploaded');
   }
 
-  const photoUrl = await uploadToCloudinary(
-    req.file.buffer,
-    req.file.originalname,
-  );
+  const photoUrl = req.file.path;
 
   const updatedContact = await updateContact(
     contactId,
