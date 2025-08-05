@@ -53,7 +53,8 @@ export const createContactController = async (req, res, next) => {
     let photoUrl = '';
 
     if (req.file) {
-      photoUrl = req.file.path;
+      console.log('Uploaded file:', req.file);
+      photoUrl = req.file.path || req.file.url;
     }
 
     const contact = await createContact({

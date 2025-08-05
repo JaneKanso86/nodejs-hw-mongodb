@@ -14,7 +14,7 @@ import {
   updateContactShema,
 } from '../validation/contactsSchemas.js';
 import { isValidId } from '../middlewares/isValidId.js';
-import { upload } from '../middlewares/upload.js';
+import { upload } from '../utils/cloudinary.js';
 import { auth } from '../middlewares/authenticate.js';
 
 const router = express.Router();
@@ -46,7 +46,7 @@ router.put(
   '/:id',
   auth,
   isValidId,
-  validateBody(createContactShema),
+
   ctrlWrapper(replaceContactController),
 );
 
