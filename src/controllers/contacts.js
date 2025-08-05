@@ -1,4 +1,3 @@
-import fs from 'fs/promises';
 import createHttpError from 'http-errors';
 import { uploadToCloudinary } from '../utils/cloudinary.js';
 
@@ -52,7 +51,20 @@ export const getContactByIdController = async (req, res, next) => {
 
 export const createContactController = async (req, res, next) => {
   try {
-    const contact = await createContact({ ...req.body, userId: req.user.id });
+    let photoUrl = '';
+
+    if (req.file) {
+      photoUrl = await uploadToCloudinary(
+        req.file.buffer,
+        req.file.originalname,
+      );
+    }
+
+    const contact = await createContact({
+      ...req.body,
+      userId: req.user.id,
+      ...(photoUrl && { photo: photoUrl }), // якщо є
+    });
 
     res.status(201).json({
       status: 201,
@@ -69,26 +81,17 @@ export const updateContactController = async (req, res, next) => {
     const contactId = req.params.id;
     const userId = req.user.id;
 
-    let photoUrl;
+    let updatedData = { ...req.body };
 
     if (req.file) {
-      const result = await uploadToCloudinary.uploader.upload(req.file.path, {
-        folder: 'contacts_photos',
-      });
-
-      photoUrl = result.secure_url;
-
-      await fs.unlink(req.file.path); // очищаємо тимчасову папку
+      const photoUrl = await uploadToCloudinary(
+        req.file.buffer,
+        req.file.originalname,
+      );
+      updatedData.photo = photoUrl;
     }
 
-    const updatedContact = await updateContact(
-      contactId,
-      {
-        ...req.body,
-        ...(photoUrl && { photo: photoUrl }),
-      },
-      userId,
-    );
+    const updatedContact = await updateContact(contactId, updatedData, userId);
 
     if (!updatedContact) {
       throw createHttpError(404, 'Contact not found');
@@ -137,5 +140,34 @@ export const replaceContactController = async (req, res) => {
     status: 201,
     message: 'Successfully created a contact!',
     data: value,
+  });
+};
+export const updateContactPhoto = async (req, res) => {
+  const userId = req.user._id;
+  const { contactId } = req.params;
+
+  if (!req.file) {
+    throw createHttpError(400, 'No file uploaded');
+  }
+
+  const photoUrl = await uploadToCloudinary(
+    req.file.buffer,
+    req.file.originalname,
+  );
+
+  const updatedContact = await updateContact(
+    contactId,
+    { photo: photoUrl },
+    userId,
+  );
+
+  if (!updatedContact) {
+    throw createHttpError(404, 'Contact not found');
+  }
+
+  res.status(200).json({
+    status: 200,
+    message: 'Photo updated successfully',
+    data: updatedContact,
   });
 };

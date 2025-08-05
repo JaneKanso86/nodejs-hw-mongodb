@@ -1,5 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { getEnvVar } from './getEnvVar.js';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import multer from 'multer';
 
 cloudinary.config({
   cloud_name: getEnvVar('CLOUDINARY_CLOUD_NAME'),
@@ -7,6 +9,13 @@ cloudinary.config({
   api_secret: getEnvVar('CLOUDINARY_API_SECRET'),
 });
 
-export function uploadToCloudinary(filePath) {
-  return cloudinary.uploader.upload(filePath);
-}
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'contacts',
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+    transformation: [{ width: 500, height: 500, crop: 'limit' }],
+  },
+});
+
+export const uploadToCloudinary = multer({ storage });

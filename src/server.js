@@ -1,3 +1,4 @@
+import path from 'node:path';
 import express from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
@@ -26,6 +27,8 @@ export const setupServer = () => {
   });
 
   app.use(pinoHttp({ logger }));
+
+  app.use('/photo', express.static(path.resolve('src/uploads/photo')));
 
   app.use('/auth', authRouter);
   app.use('/contacts', auth, contactsRouter);

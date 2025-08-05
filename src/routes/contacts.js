@@ -19,18 +19,20 @@ import { auth } from '../middlewares/authenticate.js';
 
 const router = express.Router();
 
-router.get('/', ctrlWrapper(getContactsController));
+router.get('/', auth, ctrlWrapper(getContactsController));
 
-router.get('/:id', isValidId, ctrlWrapper(getContactByIdController));
+router.get('/:id', auth, isValidId, ctrlWrapper(getContactByIdController));
 
 router.post(
   '/',
+  auth,
+  upload.single('photo'),
   validateBody(createContactShema),
   ctrlWrapper(createContactController),
 );
 
 router.patch(
-  '/:id',
+  '/:id/photo',
   auth,
   isValidId,
   upload.single('photo'),
@@ -42,6 +44,7 @@ router.delete('/:id', isValidId, ctrlWrapper(deleteContactController));
 
 router.put(
   '/:id',
+  auth,
   isValidId,
   validateBody(createContactShema),
   ctrlWrapper(replaceContactController),
