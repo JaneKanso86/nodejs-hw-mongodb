@@ -1,8 +1,7 @@
 import { logoutUser, refreshSession, registerUser } from '../services/auth.js';
 import { loginUser } from '../services/auth.js';
-import sendResetEmailService from '../services/sendResetEmail.js';
 import { resetPassword } from '../services/resetPassword.js';
-import createHttpError from 'http-errors';
+import { sendResetEmailService } from '../services/sendResetEmail.js';
 
 export const registerUserController = async (req, res) => {
   const user = await registerUser(req.body);
@@ -19,12 +18,12 @@ export const loginUserController = async (req, res) => {
 
   res.cookie('refreshToken', session.refreshToken, {
     httpOnly: true,
-    expire: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
 
   res.cookie('sessionId', session._id, {
     httpOnly: true,
-    expire: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
 
   res.status(200).json({
@@ -54,12 +53,12 @@ export const refreshUserController = async (req, res) => {
 
   res.cookie('sessionId', session._id, {
     httpOnly: true,
-    expire: session.refreshTokenValidUntil,
+    expires: session.refreshTokenValidUntil,
   });
 
   res.cookie('refreshToken', session.refreshToken, {
     httpOnly: true,
-    expire: session.refreshTokenValidUntil,
+    expires: session.refreshTokenValidUntil,
   });
 
   res.status(200).json({
@@ -71,25 +70,14 @@ export const refreshUserController = async (req, res) => {
   });
 };
 
-export const sendResetEmail = async (req, res) => {
-  const { email } = req.body;
-  try {
-    await sendResetEmailService(email);
-    res.status(200).json({
-      status: 200,
-      message: 'Reset password email has been successfully sent.',
-      data: {},
-    });
-  } catch (error) {
-    console.error(error);
-    if (error.status) throw error;
+export async function sendResetEmail(req, res) {
+  await sendResetEmailService(req.body.email);
 
-    throw createHttpError(
-      500,
-      'Failed to send the email, please try again later.',
-    );
-  }
-};
+  res.json({
+    status: 200,
+    message: 'Reset password email has been successfully sent.',
+  });
+}
 export const resetPasswordController = async (req, res) => {
   const { token, password } = req.body;
   await resetPassword({ token, password });

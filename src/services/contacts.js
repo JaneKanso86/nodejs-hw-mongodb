@@ -10,18 +10,20 @@ export const getAllContacts = async (
 ) => {
   const skip = page > 0 ? (page - 1) * perPage : 0;
 
-  const contactsQuery = ContactsCollection.find({ userId });
+  const filterQuery = { userId };
 
   if (typeof filter.type !== 'undefined') {
-    contactsQuery.where('contactType').equals(filter.type);
+    filterQuery.contactType = filter.type;
   }
 
   if (typeof filter.isFavourite !== 'undefined') {
-    contactsQuery.where('isFavourite').equals(filter.isFavourite);
+    filterQuery.isFavourite = filter.isFavourite;
   }
 
+  const contactsQuery = ContactsCollection.find(filterQuery);
+
   const [count, contacts] = await Promise.all([
-    ContactsCollection.find().countDocuments(contactsQuery),
+    ContactsCollection.countDocuments(filterQuery),
     contactsQuery
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
@@ -55,6 +57,7 @@ export const updateContact = async (contactId, payload, userId) => {
     payload,
     {
       new: true,
+      runValidators: true,
     },
   );
 };
@@ -64,17 +67,24 @@ export const deleteContact = async (contactId, userId) => {
 };
 
 export const replaceContact = async (contactId, payload, userId) => {
-  const result = await ContactsCollection.findByIdAndUpdate(
+  const updatedPayload = {
+    ...payload,
+    _id: contactId,
+    userId,
+  };
+  const result = await ContactsCollection.findOneAndUpdate(
     { _id: contactId, userId },
-    payload,
+    updatedPayload,
     {
       new: true,
       upsert: true,
+      runValidators: true,
+      setDefaultsOnInsert: true,
     },
   );
 
   return {
     value: result,
-    updateExisting: !!result,
+    updateExisting: true,
   };
 };

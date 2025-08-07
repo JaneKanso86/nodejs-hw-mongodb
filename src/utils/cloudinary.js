@@ -11,7 +11,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: 'photo',
+    folder: 'contacts',
     allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
     transformation: [{ width: 500, height: 500, crop: 'limit' }],
   },
@@ -20,8 +20,13 @@ const storage = new CloudinaryStorage({
 export const upload = multer({ storage });
 
 export const uploadToCloudinary = async (filePath, folderName = 'photo') => {
-  const result = await cloudinary.uploader.upload(filePath, {
-    folder: folderName,
-  });
-  return result.secure_url;
+  try {
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder: folderName,
+    });
+    return result.secure_url;
+  } catch (error) {
+    console.error('Cloudinary upload failed:', error.message);
+    throw new Error('Failed to upload image to Cloudinary');
+  }
 };

@@ -21,7 +21,12 @@ const router = express.Router();
 
 router.get('/', auth, ctrlWrapper(getContactsController));
 
-router.get('/:id', auth, isValidId, ctrlWrapper(getContactByIdController));
+router.get(
+  '/:contactId',
+  auth,
+  isValidId,
+  ctrlWrapper(getContactByIdController),
+);
 
 router.post(
   '/',
@@ -32,7 +37,7 @@ router.post(
 );
 
 router.patch(
-  '/:id/photo',
+  '/:contactId',
   auth,
   isValidId,
   upload.single('photo'),
@@ -40,13 +45,18 @@ router.patch(
   ctrlWrapper(updateContactController),
 );
 
-router.delete('/:id', isValidId, ctrlWrapper(deleteContactController));
-
-router.put(
-  '/:id',
+router.delete(
+  '/:contactId',
   auth,
   isValidId,
+  ctrlWrapper(deleteContactController),
+);
 
+router.put(
+  '/:contactId',
+  auth,
+  isValidId,
+  upload.single('photo'),
   ctrlWrapper(replaceContactController),
 );
 
