@@ -7,6 +7,7 @@ import {
   registerUser,
   resetEmailSchema,
   resetPasswordSchema,
+  confirmOAuthSchema,
 } from '../validation/authSchemas.js';
 import {
   loginUserController,
@@ -15,6 +16,8 @@ import {
   sendResetEmail,
   registerUserController,
   resetPasswordController,
+  getOAuthController,
+  confirmOAuthController,
 } from '../controllers/auth.js';
 
 const router = express.Router();
@@ -47,4 +50,12 @@ router.post(
   ctrlWrapper(resetPasswordController),
 );
 
+router.get('/get-oauth-url', ctrlWrapper(getOAuthController));
+
+router.post(
+  '/confirm-oauth',
+  validateBody(confirmOAuthSchema),
+  ctrlWrapper(confirmOAuthController),
+);
+console.log('POST /auth/confirm-oauth initialized');
 export default router;
