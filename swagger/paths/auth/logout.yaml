@@ -1,0 +1,21 @@
+tags:
+  - Auth
+summary: Logout user
+operationId: logoutUser
+description: 'Logout user'
+security: []
+parameters:
+  - in: cookie
+    name: sessionId
+    required: true
+    schema:
+      description: Session ID of the user
+      type: string
+      example: abc123
+responses:
+  '204':
+    description: No Content
+  '400':
+    $ref: ../../components/responses/400.yaml
+  '500':
+    $ref: ../../components/responses/500.yaml

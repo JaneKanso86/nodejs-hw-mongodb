@@ -1,0 +1,77 @@
+tags:
+  - Auth
+summary: Refresh user
+operationId: refreshUser
+description: 'Refresh user'
+security: []
+parameters:
+  - in: cookie
+    name: sessionId
+    required: true
+    schema:
+      type: string
+    example: abc123
+    description: Session ID of the user.
+  - in: cookie
+    name: refreshToken
+    required: true
+    schema:
+      type: string
+    example: abc123
+    description: Refresh token associated with the session.
+responses:
+  '200':
+    description: Refresh User
+    headers:
+      Set-Cookie:
+        description: Cookies set after successful Refresh
+        schema:
+          type: array
+          items:
+            type: string
+            example: |
+              sessionId=abc123; Path=/; HttpOnly
+              refreshToken=xyz456; Path=/; HttpOnly
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+            - message
+            - data
+          properties:
+            status:
+              type: integer
+              example: 200
+            message:
+              type: string
+              example: 'Successfully refreshed a session!'
+            data:
+              type: object
+              required:
+                - accessToken
+              properties:
+                accessToken:
+                  type: string
+                  example: 'enOZNA/g1o5dgfBe58t+DW/YjHEGyIm0LjXgmP7i'
+  '400':
+    $ref: ../../components/responses/400.yaml
+  '401':
+    description: Invalid session or refresh token.
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+            - message
+          properties:
+            status:
+              type: integer
+              example: 401
+            message:
+              type: string
+              example: Session not found or expired
+  '500':
+    $ref: ../../components/responses/500.yaml

@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
+import crypto from 'node:crypto';
 import { User } from '../models/user.js';
 import { Session } from '../models/session.js';
 import createHttpError from 'http-errors';
@@ -67,8 +67,8 @@ export const loginUser = async (payload) => {
 
   await Session.deleteOne({ userId: user._id });
 
-  const accessToken = randomBytes(30).toString('base64');
-  const refreshToken = randomBytes(30).toString('base64');
+  const accessToken = crypto.randomBytes(30).toString('base64');
+  const refreshToken = crypto.randomBytes(30).toString('base64');
 
   return await Session.create({
     userId: user._id,
@@ -105,8 +105,8 @@ export const refreshSession = async ({ sessionId, refreshToken }) => {
 
   return Session.create({
     userId: session.userId,
-    accessToken: randomBytes(30).toString('base64'),
-    refreshToken: randomBytes(30).toString('base64'),
+    accessToken: crypto.randomBytes(30).toString('base64'),
+    refreshToken: crypto.randomBytes(30).toString('base64'),
     accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 хвилин
     refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 днів
   });
