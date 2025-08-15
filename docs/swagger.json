@@ -286,44 +286,6 @@
     },
     "/contacts/{contactId}": {
       "get": {
-        "200": {
-          "description": "Get contact by id",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "status",
-                  "message",
-                  "data"
-                ],
-                "properties": {
-                  "status": {
-                    "type": "integer",
-                    "example": 200
-                  },
-                  "message": {
-                    "type": "string",
-                    "example": "Successfully get contact"
-                  },
-                  "data": {
-                    "type": "object",
-                    "$ref": "../../../components/schemas/contact.yaml"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "401": {
-          "$ref": "../../../components/responses/401.yaml"
-        },
-        "404": {
-          "$ref": "../../../components/responses/404.yaml"
-        },
-        "500": {
-          "$ref": "../../../components/responses/500.yaml"
-        },
         "tags": [
           "Contacts"
         ],
@@ -340,13 +302,72 @@
             "in": "path",
             "name": "contactId",
             "required": true,
+            "description": "MongoDB ObjectId",
             "schema": {
               "type": "string",
-              "example": "68962e8e5ae0a5402d96f9b6",
-              "responses": null
+              "pattern": "^[a-fA-F0-9]{24}$",
+              "example": "68962e8e5ae0a5402d96f9b6"
             }
           }
-        ]
+        ],
+        "responses": {
+          "200": {
+            "description": "Get contact by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Successfully get contact"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/contact"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "status": 200,
+                      "message": "Successfully get contact",
+                      "data": {
+                        "_id": "6682c0e4ea0a5c452d9186e6",
+                        "name": "Anna Smith",
+                        "email": "anna@example.com",
+                        "phoneNumber": "+380671234567",
+                        "isFavourite": true,
+                        "userId": "667f3b7f5a2f9a0012c7d111",
+                        "photo": "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+                        "createdAt": "2025-08-10T12:34:56.789Z",
+                        "updatedAt": "2025-08-12T09:15:10.123Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
       },
       "patch": {
         "tags": [
@@ -441,6 +462,25 @@
                     "data": {
                       "type": "object",
                       "$ref": "#/components/schemas/contact"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "status": 200,
+                      "message": "Successfully get contact",
+                      "data": {
+                        "_id": "6682c0e4ea0a5c452d9186e6",
+                        "name": "Anna Smith",
+                        "email": "anna@example.com",
+                        "phoneNumber": "+380671234567",
+                        "isFavourite": true,
+                        "userId": "667f3b7f5a2f9a0012c7d111",
+                        "photo": "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+                        "createdAt": "2025-08-10T12:34:56.789Z",
+                        "updatedAt": "2025-08-12T09:15:10.123Z"
+                      }
                     }
                   }
                 }
@@ -1085,7 +1125,6 @@
           "userId",
           "email",
           "isFavourite",
-          "contactType",
           "photo",
           "createdAt",
           "updatedAt"
@@ -1095,58 +1134,58 @@
             "type": "string",
             "description": "Contact's id",
             "example": "68950bde575b732cf4b815f6"
+          },
+          "name": {
+            "description": "Contact's name",
+            "type": "string",
+            "example": "jane"
+          },
+          "phoneNumber": {
+            "description": "Contact's phone number",
+            "type": "string",
+            "example": "+380950987988"
+          },
+          "email": {
+            "description": "Contact's email",
+            "type": "string",
+            "example": "example@gmail.com"
+          },
+          "isFavourite": {
+            "description": "Whether is contact favourite",
+            "type": "boolean",
+            "example": false,
+            "default": false
+          },
+          "contactType": {
+            "description": "Contact's type",
+            "type": "string",
+            "enum": [
+              "work",
+              "home",
+              "personal"
+            ],
+            "default": "personal"
+          },
+          "userId": {
+            "description": "Contact's user id",
+            "type": "string",
+            "example": "68950b1d575b732cf4b815e8"
+          },
+          "photo": {
+            "description": "Link to contact's photo",
+            "type": "string",
+            "example": "https://res.cloudinary.com/dfjpbeuvy/image/upload/v1754598365/photo/z9paacreir5xz3p0vtkc.jpg"
+          },
+          "createdAt": {
+            "description": "Time created a contact",
+            "type": "string",
+            "example": "2025-08-07T20:26:06.401Z"
+          },
+          "updatedAt": {
+            "description": "Time updated a contact",
+            "type": "string",
+            "example": "2025-08-07T20:26:06.401Z"
           }
-        },
-        "name": {
-          "description": "Contact's name",
-          "type": "string",
-          "example": "jane"
-        },
-        "phoneNumber": {
-          "description": "Contact's phone number",
-          "type": "string",
-          "example": "+380950987988"
-        },
-        "email": {
-          "description": "Contact's email",
-          "type": "string",
-          "example": "example@gmail.com"
-        },
-        "isFavourite": {
-          "description": "Whether is contact favourite",
-          "type": "boolean",
-          "example": false,
-          "default": false
-        },
-        "contactType": {
-          "description": "Contact's type",
-          "type": "string",
-          "enum": [
-            "work",
-            "home",
-            "personal"
-          ],
-          "default": "personal"
-        },
-        "userId": {
-          "description": "Contact's user id",
-          "type": "string",
-          "example": "68950b1d575b732cf4b815e8"
-        },
-        "photo": {
-          "description": "Link to contact's photo",
-          "type": "string",
-          "example": "https://res.cloudinary.com/dfjpbeuvy/image/upload/v1754598365/photo/z9paacreir5xz3p0vtkc.jpg"
-        },
-        "createdAt": {
-          "description": "Time created a contact",
-          "type": "string",
-          "example": "2025-08-07T20:26:06.401Z"
-        },
-        "updatedAt": {
-          "description": "Time updated a contact",
-          "type": "string",
-          "example": "2025-08-07T20:26:06.401Z"
         }
       },
       "auth": {
