@@ -1,16 +1,23 @@
 import express from 'express';
 import pino from 'pino';
-import cors from 'cors';
 import pinoHttp from 'pino-http';
+import cors from 'cors';
+import { getEnvVar } from './utils/getEnvVar.js';
 import contactsRouter from './routes/contacts.js';
+import authRouter from './routes/auth.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
+import cookieParser from 'cookie-parser';
+import { auth } from './middlewares/authenticate.js';
+
+const PORT = getEnvVar('PORT') || 5543;
 
 export const setupServer = () => {
   const app = express();
 
   app.use(express.json());
   app.use(cors());
+  app.use(cookieParser());
 
   const logger = pino({
     transport: {
@@ -20,19 +27,18 @@ export const setupServer = () => {
 
   app.use(pinoHttp({ logger }));
 
-  app.use('/contacts', contactsRouter);
-
-  app.get('/', (req, res) => {
-    return res.send('API is running');
-  });
+  app.use('/auth', authRouter);
+  app.use('/contacts', auth, contactsRouter);
 
   app.use(notFoundHandler);
+
   app.use(errorHandler);
 
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    logger.info(`✅ Server is running on port ${PORT}`);
-  });
+  app.listen(PORT, (error) => {
+    if (error) {
+      throw error;
+    }
 
-  return app;
+    logger.info(`Server started on port ${PORT}`);
+  });
 };
